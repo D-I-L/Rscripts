@@ -14,6 +14,23 @@ getVar <- function(json_data, name, var, asChar) {
 	var
 }
 
+getHeader <- function(dprime, rsq) {
+	hdr1 <- list(
+    	compare = "&nbsp;", length = 10, order = 2,
+    	url = "/page/Overview/display/marker_id/REPLACE/build/NCBI36",
+    	name = "marker2", title = "Marker", filter_default = ""
+    );
+    hdr2 <- list(
+    	compare = "&ge;", length = 3, order = 3, url = "null",
+    	name = "D.prime", title = "D&#39", filter_default = dprime
+    );
+	hdr3 <- list(
+        compare = "&ge;", length = 3, order = 4, url = "null",
+        name = "R.squared", title = "r<sup>2</sup>", filter_default = rsq
+    );
+	hdr <-  list(hdr1, hdr2, hdr3)	
+}
+
 run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000, dprime=0, rsq=0.8, display="json") {
 
 	if(length(.GlobalEnv$request.body) == 0){
@@ -78,11 +95,12 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 				}
 
 				ld_data <-ld( snp_data_subset, snps$genotypes[,marker1], stats=c("D.prime","R.squared") )
-				ld_data_formatted <- data.frame( rep(marker1,length(ld_data$D.prime)), rownames(ld_data$D.prime), ld_data )
-				colnames(ld_data_formatted) = c("marker1", "marker2", names(ld_data))
+				ld_data_formatted <- data.frame(  rownames(ld_data$D.prime), ld_data )
+				colnames(ld_data_formatted) = c("marker2", names(ld_data))
 	
 				#remove the instance where marker is compared with self
 				ld_data_formatted <- ld_data_formatted[ marker1!=rownames(ld_data_formatted), ]
+				ld_data_formatted <- na.omit(ld_data_formatted)
 				ld_data_formatted <- ld_data_formatted[ ld_data_formatted$R.squared>=rsq, ]
 				msg <- ld_data_formatted[ ld_data_formatted$D.prime>=dprime, ]
 			} else {
@@ -92,7 +110,10 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 	}
 	if(length(display) != 0) {
 		if(tolower(display) == 'json') {
-        	msg <- toJSON(msg)
+			# make a list of lists
+			lol <- do.call(Map, c(list, msg))
+      		hdr <- getHeader(dprime, rsq)	
+        	msg <- toJSON(list(ld=lol, header=hdr))
         } else {
         	msg = otable(msg)
         }
