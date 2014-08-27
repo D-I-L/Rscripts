@@ -21,11 +21,11 @@ getHeader <- function(dprime, rsq) {
     	name = "marker2", title = "Marker", filter_default = ""
     );
     hdr2 <- list(
-    	compare = "&ge;", length = 3, order = 3, url = "null",
+    	compare = "&ge;", length = 3, order = 3, url = NULL,
     	name = "D.prime", title = "D&#39", filter_default = dprime
     );
 	hdr3 <- list(
-        compare = "&ge;", length = 3, order = 4, url = "null",
+        compare = "&ge;", length = 3, order = 4, url = NULL,
         name = "R.squared", title = "r<sup>2</sup>", filter_default = rsq
     );
 	hdr <-  list(hdr1, hdr2, hdr3)	
