@@ -1,18 +1,4 @@
 
-cmdLineRun <- function() {
-	args<-commandArgs(TRUE)
-	if(length(args) < 4){
-   	 	cat("Error incorrect number of args","\n",sep="")
-    		q()
-	}else{
-   	 	for(i in 1:length(args)){
-        		eval(parse(text=args[[i]]))
-  		}
-	}
-	library("snpStats")
-	run(data_dir, chromosome, dataset, focalSNP, window_size, args)
-}
-
 getVar <- function(json_data, name, var, asChar) {
 	if (length( json_data[[name]] ) != 0) 
 		if(asChar)
@@ -28,7 +14,7 @@ getVar <- function(json_data, name, var, asChar) {
 	var
 }
 
-run <- function(data_dir, chromosome, dataset, focalSNP, window_size=1000000, dprime=0, rsq=0.8, display="json", targetSNP=NULL, args=0) {
+run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000, dprime=0, rsq=0.8, display="json") {
 
 	if(length(.GlobalEnv$request.body) == 0){
 		# probably GET
@@ -39,35 +25,36 @@ run <- function(data_dir, chromosome, dataset, focalSNP, window_size=1000000, dp
 	}
 
 	window_size = getVar(json_data, 'window_size', window_size, FALSE)
-	data_dir    = getVar(json_data, 'data_dir', data_dir, TRUE)
  	chromosome  = getVar(json_data, 'chromosome', chromosome, FALSE)
  	dataset     = getVar(json_data, 'dataset', dataset, TRUE)
- 	focalSNP    = getVar(json_data, 'focalSNP', focalSNP, TRUE)
- 	display     = getVar(json_data, 'display', display, TRUE)
- 	targetSNP   = getVar(json_data, 'targetSNP', targetSNP, TRUE)
+ 	marker1     = getVar(json_data, 'marker1', marker1, TRUE)
+ 	marker2     = getVar(json_data, 'marker2', marker2, TRUE)
  	dprime      = getVar(json_data, 'dprime', dprime, FALSE)
 	rsq         = getVar(json_data, 'rsq', rsq, FALSE)
+	display     = getVar(json_data, 'display', display, TRUE)
+
+	root = root <- Sys.getenv("ROOT")
+	data_dir = paste(root,"RDATA",dataset,"",sep='/')
 
 	prefix = "genotypes_chr"
 	data_file = paste(data_dir,prefix,chromosome,"_",dataset,".RData",sep="")
 	if(!file.exists(data_file)){
 		msg <- paste("Data not found: ",prefix,chromosome,"_",dataset,".RData",sep="")
 	} else {
-		load(paste(data_dir,prefix,chromosome,"_",dataset,".RData",sep=""))
-		pos=snps$support[focalSNP,]$position
+		load(data_file)
+		pos=snps$support[marker1,]$position
 		if(is.na(pos)){
-			msg <- paste("Marker ",focalSNP," was not found in this dataset",sep="")
+			msg <- paste("Marker ",marker1," was not found in this dataset",sep="")
 		} else {
-
-			if(length(targetSNP) != 0) {
+			if(length(marker2) != 0) {
 				#print("Marker vs Marker")
-				snp.ids <-c(focalSNP,targetSNP)
+				snp.ids <-c(marker1,marker2)
 			} else {
 				#print("Region based")
-				fSNP.pos <-snps$support[focalSNP,]$position
+				fSNP.pos <-snps$support[marker1,]$position
 	
 				if(is.na(fSNP.pos)){
-					msg <- paste("Marker ",focalSNP," was not found in this dataset",sep="")
+					msg <- paste("Marker ",marker1," was not found in this dataset",sep="")
 				}
 				neighbouring.snp.ind <-which( snps$support$position > (fSNP.pos-window_size) &
 						snps$support$position < (fSNP.pos+window_size) &
@@ -81,25 +68,25 @@ run <- function(data_dir, chromosome, dataset, focalSNP, window_size=1000000, dp
 			snp_data_subset <-snp_data_subset[, snp_stats$MAF >= 0.01 & snp_stats$Call.rate >= 0.90 & snp_stats$z.HWE^2 < 25]
 
 			#Check that snp makes it through quality control
-			if (focalSNP %in% colnames(snp_data_subset)) {
+			if (marker1 %in% colnames(snp_data_subset)) {
 				#for pairwise between 2 markers we need a different output file recipe.
-				if(length(targetSNP) != 0){
-					if(!targetSNP %in% colnames(snp_data_subset)){
-						msg <- paste("Marker ",targetSNP," did not pass QC",sep="")
+				if(length(marker2) != 0){
+					if(!marker2 %in% colnames(snp_data_subset)){
+						msg <- paste("Marker ",marker2," did not pass QC",sep="")
 					}
-					dataset=paste('pairwise',focalSNP,targetSNP,dataset,sep="_")
+					dataset=paste('pairwise',marker1,marker2,dataset,sep="_")
 				}
 
-				ld_data <-ld( snp_data_subset, snps$genotypes[,focalSNP], stats=c("D.prime","R.squared") )
-				ld_data_formatted <- data.frame( rep(focalSNP,length(ld_data$D.prime)), rownames(ld_data$D.prime), ld_data )
+				ld_data <-ld( snp_data_subset, snps$genotypes[,marker1], stats=c("D.prime","R.squared") )
+				ld_data_formatted <- data.frame( rep(marker1,length(ld_data$D.prime)), rownames(ld_data$D.prime), ld_data )
 				colnames(ld_data_formatted) = c("marker1", "marker2", names(ld_data))
 	
 				#remove the instance where marker is compared with self
-				ld_data_formatted <- ld_data_formatted[ focalSNP!=rownames(ld_data_formatted), ]
+				ld_data_formatted <- ld_data_formatted[ marker1!=rownames(ld_data_formatted), ]
 				ld_data_formatted <- ld_data_formatted[ ld_data_formatted$R.squared>=rsq, ]
 				msg <- ld_data_formatted[ ld_data_formatted$D.prime>=dprime, ]
 			} else {
-				msg <- paste("Marker ",focalSNP," did not pass QC",sep="")
+				msg <- paste("Marker ",marker1," did not pass QC",sep="")
 			}
 		}
 	}
@@ -112,4 +99,3 @@ run <- function(data_dir, chromosome, dataset, focalSNP, window_size=1000000, dp
     }
 }
 
-#cmdLineRun()
