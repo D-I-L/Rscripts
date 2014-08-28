@@ -56,12 +56,12 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 	prefix = "genotypes_chr"
 	data_file = paste(data_dir,prefix,chromosome,"_",dataset,".RData",sep="")
 	if(!file.exists(data_file)){
-		msg <- paste("Data not found: ",prefix,chromosome,"_",dataset,".RData",sep="")
+		err <- paste("Data not found: ",prefix,chromosome,"_",dataset,".RData",sep="")
 	} else {
 		load(data_file)
 		pos=snps$support[marker1,]$position
 		if(is.na(pos)){
-			msg <- paste("Marker ",marker1," was not found in this dataset",sep="")
+			err <- paste("Marker ",marker1," was not found in this dataset",sep="")
 		} else {
 			if(length(marker2) != 0) {
 				#print("Marker vs Marker")
@@ -71,7 +71,7 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 				fSNP.pos <-snps$support[marker1,]$position
 	
 				if(is.na(fSNP.pos)){
-					msg <- paste("Marker ",marker1," was not found in this dataset",sep="")
+					err <- paste("Marker ",marker1," was not found in this dataset",sep="")
 				}
 				neighbouring.snp.ind <-which( snps$support$position > (fSNP.pos-window_size) &
 						snps$support$position < (fSNP.pos+window_size) &
@@ -104,16 +104,20 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 				ld_data_formatted <- ld_data_formatted[ ld_data_formatted$R.squared>=rsq, ]
 				msg <- ld_data_formatted[ ld_data_formatted$D.prime>=dprime, ]
 			} else {
-				msg <- paste("Marker ",marker1," did not pass QC",sep="")
+				err <- paste("Marker ",marker1," did not pass QC",sep="")
 			}
 		}
 	}
 	if(length(display) != 0) {
 		if(tolower(display) == 'json') {
-			# make a list of lists
-			lol <- do.call(Map, c(list, msg))
-      		hdr <- getHeader(dprime, rsq)	
-        	msg <- toJSON(list(ld=lol, header=hdr))
+			if(exists("err")) {
+				err <- toJSON(err)
+			} else {
+				# make a list of lists
+				lol <- do.call(Map, c(list, msg))
+      			hdr <- getHeader(dprime, rsq)	
+        		msg <- toJSON(list(ld=lol, header=hdr))
+        	}
         } else {
         	msg = otable(msg)
         }
