@@ -47,7 +47,9 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
  	marker1     = getVar(json_data, 'marker1', marker1, TRUE)
  	marker2     = getVar(json_data, 'marker2', marker2, TRUE)
  	dprime      = getVar(json_data, 'dprime', dprime, FALSE)
+ 	dprime      = getVar(json_data, 'D.prime', dprime, FALSE)
 	rsq         = getVar(json_data, 'rsq', rsq, FALSE)
+	rsq         = getVar(json_data, 'R.squared', rsq, FALSE)
 	display     = getVar(json_data, 'display', display, TRUE)
 
 	root = root <- Sys.getenv("ROOT")
