@@ -103,6 +103,8 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 				#remove the instance where marker is compared with self
 				ld_data_formatted <- ld_data_formatted[ marker1!=rownames(ld_data_formatted), ]
 				ld_data_formatted <- na.omit(ld_data_formatted)
+				#format R squared before filtering
+				ld_data_formatted$R.squared <- round(ld_data_formatted$R.squared, digits=2)
 				ld_data_formatted <- ld_data_formatted[ ld_data_formatted$R.squared>=rsq, ]
 				msg <- ld_data_formatted[ ld_data_formatted$D.prime>=dprime, ]
 			} else {
