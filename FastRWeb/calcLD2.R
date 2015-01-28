@@ -115,7 +115,7 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 	if(length(display) != 0) {
 		if(tolower(display) == 'json') {
 			if(exists("err")) {
-				err <- toJSON(err)
+				err <- toJSON(list(error=err))
 			} else {
 				# make a list of lists
 				lol <- do.call(Map, c(list, msg))
