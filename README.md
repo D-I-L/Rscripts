@@ -1,5 +1,5 @@
 Rscripts
 ========
 
-FastRWeb - FastRWeb scripts
+FastRWeb - FastRWeb script(s)
 
