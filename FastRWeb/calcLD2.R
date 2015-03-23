@@ -115,12 +115,12 @@ run <- function(chromosome, dataset, marker1, marker2=NULL, window_size=1000000,
 	if(length(display) != 0) {
 		if(tolower(display) == 'json') {
 			if(exists("err")) {
-				err <- toJSON(list(error=err))
+                                WebResult(payload = toJSON(list(error=err)), content.type = "application/json; charset=utf-8")
 			} else {
 				# make a list of lists
 				lol <- do.call(Map, c(list, msg))
       			hdr <- getHeader(dprime, rsq)	
-        		msg <- toJSON(list(ld=lol, header=hdr))
+                        WebResult(payload = toJSON(list(ld=lol, header=hdr)), content.type = "application/json; charset=utf-8")
         	}
         } else {
         	msg = otable(msg)
